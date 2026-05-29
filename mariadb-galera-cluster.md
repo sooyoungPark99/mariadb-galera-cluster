@@ -67,7 +67,7 @@ nmcli con down eth0 && nmcli con up eth0
 ```
 <img width="972" height="683" alt="image" src="https://github.com/user-attachments/assets/625b8e8e-a9d0-4d02-9e42-ac71ddcfbea4" />
 
-> GUI(설정 → 네트워크)로 설정해도 결과는 동일하다.
+#### -> GUI(설정 → 네트워크)로 설정해도 결과는 동일하다.
 
 ### 1-3. /etc/hosts 등록 (전 노드 동일)
 
