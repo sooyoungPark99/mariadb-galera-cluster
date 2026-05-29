@@ -1,7 +1,6 @@
 # MariaDB 10.6 Galera Cluster 구성
 
 3노드 Galera Cluster를 단계별로 구성한다.
-각 단계가 왜 필요한지 이유를 함께 설명한다.
 
 ---
 
@@ -46,6 +45,7 @@ nmcli con mod eth0 ipv4.addresses 172.31.0.253/16
 nmcli con mod eth0 ipv4.gateway 172.31.0.1
 nmcli con down eth0 && nmcli con up eth0
 ```
+<img width="972" height="682" alt="image" src="https://github.com/user-attachments/assets/a9baed50-be46-4826-bdd9-0825c65c7c41" />
 
 **galera2 노드에서:**
 
@@ -55,6 +55,7 @@ nmcli con mod eth0 ipv4.addresses 172.31.0.254/16
 nmcli con mod eth0 ipv4.gateway 172.31.0.1
 nmcli con down eth0 && nmcli con up eth0
 ```
+<img width="976" height="685" alt="image" src="https://github.com/user-attachments/assets/d4570b49-43c6-4127-b0f2-12b611ac7930" />
 
 **galera3 노드에서:**
 
@@ -64,6 +65,7 @@ nmcli con mod eth0 ipv4.addresses 172.31.0.255/16
 nmcli con mod eth0 ipv4.gateway 172.31.0.1
 nmcli con down eth0 && nmcli con up eth0
 ```
+<img width="972" height="683" alt="image" src="https://github.com/user-attachments/assets/625b8e8e-a9d0-4d02-9e42-ac71ddcfbea4" />
 
 > GUI(설정 → 네트워크)로 설정해도 결과는 동일하다.
 
@@ -91,7 +93,7 @@ rm -rf /var/lib/mysql/*
 mysql_install_db --user=mysql --datadir=/var/lib/mysql
 ```
 
-> ⚠️ 클러스터 기동 전이므로 아직 mariadb를 start하지 않는다.
+> 클러스터 기동 전이므로 아직 mariadb를 start하지 않는다.
 
 ---
 
