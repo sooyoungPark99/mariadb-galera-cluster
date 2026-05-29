@@ -1,2 +1,73 @@
-# mariadb-galera-cluster
-Oracle Linux 7.7 환경에서 MariaDB 10.6 Galera Cluster 3노드 구성 가이드 (Multi-Primary 동기 복제)
+# MariaDB 10.6 Galera Cluster 구성 가이드
+
+Oracle Linux 7.7 환경에서 MariaDB 10.6 Galera Cluster를 구성하는 가이드입니다.
+VirtualBox 기반의 실습 환경에서 구성했습니다.
+
+---
+
+## Galera Cluster란
+
+모든 노드가 동등한 권한을 가지는 Multi-Primary(다중 마스터) 동기 복제 클러스터다.
+어느 노드에서 쓰기를 해도 나머지 노드에 즉시 동기화되며, 한 노드에 장애가 발생해도 나머지 노드가 계속 서비스를 제공한다.
+
+```
+[Node 1] ←→ [Node 2] ←→ [Node 3]
+ 쓰기/읽기    쓰기/읽기    쓰기/읽기
+```
+
+Oracle의 RAC와 유사한 개념이며, 무중단 서비스와 데이터 손실 방지가 목적이다.
+
+---
+
+## 환경 구성
+
+| 항목 | 내용 |
+|------|------|
+| OS | Oracle Linux 7.7 |
+| DB 버전 | MariaDB 10.6 (LTS) |
+| 복제 방식 | wsrep 기반 동기 복제 |
+| 최소 노드 수 | 3개 (Split-Brain 방지) |
+| 가상화 | VirtualBox 7.0.18 |
+
+---
+
+## 서버 구성
+
+| 역할 | 호스트명 | IP |
+|------|---------|----|
+| Node 1 (부트스트랩) | galera1 | 172.31.0.253 |
+| Node 2 | galera2 | 172.31.0.254 |
+| Node 3 | galera3 | 172.31.0.255 |
+
+> MariaDB Single 설치가 완료된 VM을 복제하여 3대를 구성한다.
+
+---
+
+## 왜 최소 3개 노드인가
+
+| 노드 수 | 문제 |
+|---------|------|
+| 2개 | 노드 1개 장애 시 Split-Brain 발생 (어느 쪽이 정상인지 판단 불가) |
+| 3개 | 과반수(Quorum) 확보로 장애 노드 자동 격리 가능 |
+
+홀수 노드 구성으로 과반수를 유지하는 것이 Galera의 핵심이다.
+
+---
+
+## 구성 가이드
+
+전체 구성 절차는 아래 문서에 정리되어 있다.
+
+| 문서 | 내용 |
+|------|------|
+| [mariadb-galera-cluster.md](./mariadb-galera-cluster.md) | VM 복제 / Galera 설정 / 클러스터 기동 / 클러스터 테스트 / 트러블슈팅 |
+
+---
+
+## 주요 특징
+
+- wsrep 기반 동기 복제 구성
+- 3노드 Multi-Primary 클러스터
+- 첫 노드 부트스트랩 후 순차 기동
+- 노드 간 데이터 동기화 테스트
+- 실제 구성 중 발생한 오류 및 해결 방법 포함
