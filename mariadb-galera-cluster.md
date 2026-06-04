@@ -82,6 +82,7 @@ vi /etc/hosts
 172.31.0.254  galera2
 172.31.0.255  galera3
 ```
+<img width="1108" height="168" alt="image" src="https://github.com/user-attachments/assets/5d095683-fc27-494d-bd4d-f76ca03102d5" />
 
 ### 1-4. 복제본 데이터 초기화 (전 노드)
 
@@ -113,7 +114,7 @@ vi /etc/my.cnf.d/galera.cnf
 ```
 [galera]
 wsrep_on = ON
-wsrep_provider = /usr/lib64/galera/libgalera_smm.so
+wsrep_provider = /usr/lib64/galera-4/libgalera_smm.so
 wsrep_cluster_name = "maria_galera_cluster"
 wsrep_cluster_address = "gcomm://172.31.0.253,172.31.0.254,172.31.0.255"
 
@@ -125,6 +126,8 @@ innodb_autoinc_lock_mode = 2
 wsrep_node_name = "galera1"
 wsrep_node_address = "172.31.0.253"
 ```
+<img width="1060" height="306" alt="image" src="https://github.com/user-attachments/assets/b5ffa737-3dde-4a1f-88a8-d60139a25e37" />
+<img width="1857" height="310" alt="image" src="https://github.com/user-attachments/assets/3a369a56-ef72-47df-a2be-9f62ce4b781d" />
 
 | 항목 | 설명 | 노드별 차이 |
 |------|------|-----------|
@@ -145,7 +148,7 @@ wsrep_node_address = "172.31.0.253"
 | galera2 | "galera2" | "172.31.0.254" |
 | galera3 | "galera3" | "172.31.0.255" |
 
-> ⚠️ 마지막 2개 항목만 노드별로 바꾸고, 나머지는 전 노드 동일하게 설정한다.
+> 마지막 2개 항목만 노드별로 바꾸고, 나머지는 전 노드 동일하게 설정한다.
 
 ---
 
@@ -173,6 +176,7 @@ mysql -u root -p -e "SHOW STATUS LIKE 'wsrep_cluster_size';"
 | wsrep_cluster_size | 1     |
 +--------------------+-------+
 ```
+<img width="1142" height="165" alt="image" src="https://github.com/user-attachments/assets/30979e2d-1bc1-4641-97c6-681c765c126b" />
 
 > 부트스트랩은 첫 노드를 처음 기동할 때 한 번만 사용한다. 이후에는 일반 `systemctl start mariadb`로 기동한다.
 
@@ -219,6 +223,8 @@ mysql -u root -p -e "SHOW STATUS LIKE 'wsrep_cluster_status';"
 | wsrep_cluster_status | Primary |
 +----------------------+---------+
 ```
+
+<img width="915" height="341" alt="image" src="https://github.com/user-attachments/assets/4f089081-2ead-4e4c-b3af-6e63f4a18ea6" />
 
 ---
 
@@ -270,6 +276,7 @@ SELECT * FROM t1;
 -- (1, 'node1-data'), (2, 'node2-data') 모두 조회되면 정상
 EXIT;
 ```
+<img width="1862" height="405" alt="image" src="https://github.com/user-attachments/assets/02d88ed1-9ab9-4d11-a46f-e9dc783af3ae" />
 
 > 모든 노드에서 동일한 데이터가 조회되면 Multi-Primary 동기 복제가 정상 동작하는 것이다.
 
@@ -310,3 +317,53 @@ galera_new_cluster
 # 나머지 노드는 일반 기동
 systemctl start mariadb
 ```
+---
+ 
+### MobaXterm 연결 실패 (Connection timed out / Cannot assign requested address)
+ 
+**증상:** VM IP/SSH 모두 정상인데 MobaXterm에서 연결 실패
+ 
+**원인:** Windows PC에 네트워크 어댑터가 여러 개(물리 NIC + VMware/VPN 가상 어댑터 등) 있을 때, VM의 ARP가 잘못된 어댑터에 잡혀 라우팅 불일치가 발생한다.
+ 
+**진단 순서:**
+ 
+1. VM에서 SSH 상태 확인
+```bash
+systemctl status sshd
+ss -tlnp | grep 22
+```
+ 
+2. Windows에서 ARP 테이블 확인
+```cmd
+arp -a | findstr 172.31
+```
+ 
+3. VM IP가 어느 인터페이스에 잡혔는지 확인
+```
+인터페이스: 172.31.0.1 --- 0x3   ← VMware 가상 어댑터 (잘못된 경우)
+  172.31.0.254  00-50-56-...
+ 
+인터페이스: 172.31.0.51 --- 0xa  ← 실제 물리 어댑터 (여기에 있어야 정상)
+  172.31.0.254  08-00-27-...
+```
+ 
+4. 올바른 인터페이스로 라우팅 수동 추가 (Windows 관리자 cmd)
+```cmd
+route add 172.31.0.254 mask 255.255.255.255 172.31.0.1 if 10
+route add 172.31.0.255 mask 255.255.255.255 172.31.0.1 if 10
+```
+ 
+> `if 10`은 인터페이스 번호(0xa = 10진수 10)이다. PC마다 다를 수 있으므로 arp -a에서 실제 사용 인터페이스 번호를 확인한다.
+ 
+5. 영구 적용 (PC 재부팅 후에도 유지)
+```cmd
+route -p add 172.31.0.254 mask 255.255.255.255 172.31.0.1 if 10
+route -p add 172.31.0.255 mask 255.255.255.255 172.31.0.1 if 10
+```
+ 
+**실무 적용 시 주의사항:**
+ 
+- VMware, VPN, 가상 어댑터 등 여러 NIC가 있는 환경에서 자주 발생한다.
+- `arp -a`로 VM IP가 어느 인터페이스에 잡혔는지 먼저 확인한다.
+- `if` 번호는 환경마다 다르므로 반드시 확인 후 입력한다.
+- `-p` 옵션 없이 추가하면 PC 재부팅 시 초기화되므로 영구 적용 시 반드시 `-p` 옵션을 사용한다.
